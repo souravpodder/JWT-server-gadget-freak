@@ -27,16 +27,20 @@ async function run() {
       // get the token info from post headers 
       const tokenInfo = req.headers.authorization;
       // console.log(tokenInfo);
-      const [email, accessToken] = tokenInfo.split(' ');
-      // console.log(`email: ${email}, token: ${accessToken}`);
-      // verify the token to allow access of upload 
-      const decoded = verifyToken(accessToken);
-      if (email === decoded.email) {
-        const newProduct = req.body;
-        const result = await productsCollection.insertOne(newProduct);
-        res.send(result);
-      } else {
-        res.send({ message: 'Unauthorized Access' })
+      if (!tokenInfo) {
+        res.send({ message: 'unauthorized access' })
+      }
+      else {
+        const [email, accessToken] = tokenInfo.split(' ');
+
+        const decoded = verifyToken(accessToken);
+        if (email === decoded.email) {
+          const newProduct = req.body;
+          const result = await productsCollection.insertOne(newProduct);
+          res.send(result);
+        } else {
+          res.send({ message: 'Unauthorized Access' })
+        }
       }
 
       // upload the product 
@@ -61,18 +65,25 @@ async function run() {
 
     // get the orders 
     app.get('/orders', async (req, res) => {
-      const tokenInfo = req.headers.authorization;
-      const [email, accessToken] = tokenInfo.split(' ');
-      const decoded = verifyToken(accessToken);
 
-      if (email === decoded.email) {
-        const cursor = ordersCollection.find({ email });
-        const orders = await cursor.toArray();
-        res.send(orders);
-      } else {
-        res.send({ message: 'Unauthorized Access!' });
+      const tokenInfo = req.headers.authorization;
+      if (!tokenInfo) {
+        res.send({ message: 'unauthorized access' })
       }
 
+      else {
+        const [email, accessToken] = tokenInfo.split(' ');
+        const decoded = verifyToken(accessToken);
+
+        if (email === decoded.email) {
+          const cursor = ordersCollection.find({ email });
+          const orders = await cursor.toArray();
+          res.send(orders);
+        } else {
+          res.send({ message: 'Unauthorized Access!' });
+        }
+
+      }
     })
     // jwt token apis 
     app.post('/login', async (req, res) => {
